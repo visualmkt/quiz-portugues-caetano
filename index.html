@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz de Português do Caetano | 40 Questões Interativas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-light: #6366F1;
+      --secondary: #EC4899;
+      --accent: #F59E0B;
+      --success: #10B981;
+      --error: #EF4444;
+      --bg-gradient: linear-gradient(135deg, #4338CA 0%, #3B82F6 50%, #06B6D4 100%);
+      --card-bg: #FFFFFF;
+      --text-main: #1F2937;
+      --text-muted: #6B7280;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Nunito', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: var(--text-main);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Canvas Confetti */
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+      margin: auto;
+      z-index: 10;
+    }
+
+    /* Card Principal */
+    .quiz-card {
+      background: var(--card-bg);
+      border-radius: 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      padding: 28px 24px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+
+    @media (min-width: 640px) {
+      .quiz-card {
+        padding: 36px 32px;
+      }
+    }
+
+    /* Header do Quiz */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge-category {
+      background: #EEF2FF;
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stats-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #F3F4F6;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 14px;
+      color: #374151;
+    }
+
+    .sound-toggle {
+      background: #F3F4F6;
+      border: none;
+      border-radius: 999px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: background 0.2s;
+    }
+    .sound-toggle:hover {
+      background: #E5E7EB;
+    }
+
+    /* Barra de Progresso */
+    .progress-section {
+      margin-bottom: 24px;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .progress-track {
+      background: #E5E7EB;
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10B981, #3B82F6);
+      width: 0%;
+      border-radius: 999px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Card de Apoio (Texto/Tirinha) */
+    .support-box {
+      background: #F8FAFC;
+      border: 2px dashed #CBD5E1;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 20px;
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: #334155;
+      white-space: pre-line;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .support-box strong {
+      color: #0F172A;
+    }
+
+    /* Enunciado da Pergunta */
+    .question-title {
+      font-family: 'Fredoka', cursive;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: #1E293B;
+      margin-bottom: 22px;
+    }
+
+    @media (min-width: 640px) {
+      .question-title {
+        font-size: 22px;
+      }
+    }
+
+    /* Opções */
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .option-btn {
+      background: #FFFFFF;
+      border: 2.5px solid #E2E8F0;
+      border-radius: 18px;
+      padding: 14px 18px;
+      text-align: left;
+      font-size: 16px;
+      font-weight: 700;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      outline: none;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--primary-light);
+      background: #F5F7FF;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px -2px rgba(79, 70, 229, 0.15);
+    }
+
+    .option-letter {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      background: #F1F5F9;
+      color: #475569;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+
+    .option-btn:hover:not(:disabled) .option-letter {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Estados de Resposta */
+    .option-btn.correct {
+      background: #ECFDF5 !important;
+      border-color: #10B981 !important;
+      color: #065F46 !important;
+      animation: pulseGreen 0.5s ease;
+    }
+    .option-btn.correct .option-letter {
+      background: #10B981 !important;
+      color: white !important;
+    }
+
+    .option-btn.wrong {
+      background: #FEF2F2 !important;
+      border-color: #EF4444 !important;
+      color: #991B1B !important;
+      animation: shake 0.4s ease;
+    }
+    .option-btn.wrong .option-letter {
+      background: #EF4444 !important;
+      color: white !important;
+    }
+
+    .option-btn:disabled {
+      cursor: default;
+    }
+
+    /* Caixa de Explicação */
+    .explanation-card {
+      display: none;
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 22px;
+      font-size: 15px;
+      line-height: 1.5;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .explanation-card.success-mode {
+      background: #ECFDF5;
+      border: 2px solid #A7F3D0;
+      color: #065F46;
+    }
+
+    .explanation-card.error-mode {
+      background: #FEF2F2;
+      border: 2px solid #FECACA;
+      color: #991B1B;
+    }
+
+    .explanation-title {
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 16px;
+    }
+
+    /* Botão Avançar */
+    .action-bar {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .next-btn {
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+      transition: all 0.2s;
+    }
+
+    .next-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 20px -3px rgba(16, 185, 129, 0.5);
+    }
+
+    /* Tela de Início */
+    .welcome-screen, .result-screen {
+      text-align: center;
+      padding: 20px 10px;
+    }
+
+    .welcome-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      animation: bounce 2s infinite;
+    }
+
+    .welcome-title {
+      font-family: 'Fredoka', cursive;
+      font-size: 28px;
+      color: #1E293B;
+      margin-bottom: 12px;
+    }
+
+    .welcome-subtitle {
+      color: #64748B;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .start-btn {
+      background: linear-gradient(135deg, #4F46E5, #3B82F6);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 18px 48px;
+      font-size: 20px;
+      font-weight: 900;
+      font-family: 'Fredoka', cursive;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.4);
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .start-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 16px 30px rgba(79, 70, 229, 0.5);
+    }
+
+    /* Tela de Resultado */
+    .score-badge {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      background: #F8FAFC;
+      border: 3px solid #E2E8F0;
+      border-radius: 24px;
+      padding: 20px 40px;
+      margin: 20px 0;
+    }
+
+    .score-number {
+      font-family: 'Fredoka', cursive;
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .score-percent {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-muted);
+    }
+
+    .result-msg {
+      font-size: 18px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    @media (min-width: 500px) {
+      .btn-group {
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+
+    /* Animações */
+    @keyframes pulseGreen {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-16px); }
+      60% { transform: translateY(-8px); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="container">
+    <div class="quiz-card" id="quizCard">
+      
+      <!-- TELA INICIAL -->
+      <div id="screenStart" class="welcome-screen">
+        <div class="welcome-icon">🎒✨</div>
+        <h1 class="welcome-title">Desafio de Português</h1>
+        <p class="welcome-subtitle">
+          Olá, <strong>Caetano</strong>! Preparado para testar seus conhecimentos e arrasar na prova?
+          <br>São <strong>40 questões interativas</strong> com dicas e explicações imediatas para você aprender jogando!
+        </p>
+        <button class="start-btn" onclick="startQuiz()">
+          COMEÇAR DESAFIO 🚀
+        </button>
+      </div>
+
+      <!-- TELA DO QUIZ -->
+      <div id="screenQuiz" style="display: none;">
+        <!-- Header -->
+        <div class="header-bar">
+          <span class="badge-category" id="badgeCategory">Texto Instrucional</span>
+          <div class="stats-group">
+            <span class="stat-pill">⭐ <span id="scoreDisplay">0</span></span>
+            <span class="stat-pill">🔥 <span id="streakDisplay">0</span></span>
+            <button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="Ativar/Desativar Som">🔊</button>
+          </div>
+        </div>
+
+        <!-- Barra de Progresso -->
+        <div class="progress-section">
+          <div class="progress-info">
+            <span id="questionCounter">Questão 1 de 40</span>
+            <span id="progressPercent">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <!-- Apoio / Enunciado -->
+        <div class="support-box" id="supportBox" style="display: none;"></div>
+        <h2 class="question-title" id="questionTitle"></h2>
+
+        <!-- Opções -->
+        <div class="options-grid" id="optionsGrid"></div>
+
+        <!-- Explicação -->
+        <div class="explanation-card" id="explanationCard">
+          <div class="explanation-title" id="explanationTitle"></div>
+          <div id="explanationBody"></div>
+        </div>
+
+        <!-- Botão Próxima -->
+        <div class="action-bar" id="actionBar" style="display: none;">
+          <button class="next-btn" id="nextBtn" onclick="nextQuestion()">
+            Próxima Pergunta ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- TELA FINAL -->
+      <div id="screenResult" class="result-screen" style="display: none;">
+        <div class="welcome-icon" id="resultIcon">🏆</div>
+        <h1 class="welcome-title" id="resultTitle">Sensacional, Caetano!</h1>
+        <div class="score-badge">
+          <div class="score-number" id="finalScoreText">38 / 40</div>
+          <div class="score-percent" id="finalPercentText">95% de aproveitamento</div>
+        </div>
+        <p class="result-msg" id="finalMessage">
+          Você mandou super bem no simulado! Está mais do que pronto para a prova de Português!
+        </p>
+        <div class="btn-group">
+          <button class="start-btn" onclick="startQuiz()">
+            JOGAR NOVAMENTE 🔄
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const questions = [{"id": 1, "categoria": "Texto Instrucional", "texto_apoio": "COMO LAVAR AS MÃOS CORRETAMENTE:\n1. Molhe as mãos com água limpa corrente.\n2. Aplique sabão suficiente para cobrir todas as mãos.\n3. Esfregue as palmas, o dorso, entre os dedos e sob as unhas por pelo menos 20 segundos.\n4. Enxágue bem as mãos em água corrente.\n5. Seque as mãos com uma toalha limpa ou papel descartável.", "pergunta": "Qual é a principal finalidade (objetivo) desse texto?", "opcoes": ["Contar uma história divertida sobre os germes.", "Ensinar o leitor a realizar um procedimento passo a passo.", "Fazer propaganda de um sabonete novo.", "Descrever como a água chega até a nossa torneira."], "correta": 1, "explicacao": "Muito bem! Os textos instrucionais têm como objetivo orientar ou ensinar o leitor a fazer algo, mostrando um passo a passo organizado."}, {"id": 2, "categoria": "Texto Instrucional", "texto_apoio": null, "pergunta": "Nos textos instrucionais (como regras de jogos e manuais), por que as etapas costumam vir numeradas (1, 2, 3...)?", "opcoes": ["Para indicar qual passo é mais divertido.", "Para que o leitor possa escolher qualquer ordem e começar pelo final.", "Para organizar e orientar o leitor a seguir uma sequência exata de ações.", "Para que o texto pareça uma lista de compras."], "correta": 2, "explicacao": "Isso aí! A numeração organiza a ordem necessária das ações. Não dá para secar as mãos antes de molhar e ensaboar, certo?"}, {"id": 3, "categoria": "Texto Instrucional", "texto_apoio": "Releia o início de cada passo:\n• 'Molhe as mãos...'\n• 'Aplique sabão...'\n• 'Esfregue as palmas...'\n• 'Enxágue bem...'\n• 'Seque as mãos...'", "pergunta": "As palavras em destaque (Molhe, Aplique, Esfregue, Enxágue, Seque) indicam:", "opcoes": ["Nomes de objetos da casa.", "Ações e orientações que o leitor deve seguir.", "Características e qualidades das mãos.", "Sentimentos de alegria ou cansaço."], "correta": 1, "explicacao": "Correto! São verbos no modo imperativo, que expressam ordens, comandos ou instruções diretas para quem está lendo."}, {"id": 4, "categoria": "Texto Instrucional", "texto_apoio": null, "pergunta": "Assinale a alternativa que contém APENAS exemplos de textos instrucionais:", "opcoes": ["Piada, poema e notícia de jornal.", "Receita culinária, manual de videogame e regras de jogo.", "Fábula, biografia e conto de fadas.", "História em quadrinhos, bilhete e trava-línguas."], "correta": 1, "explicacao": "Exato! Receitas, manuais de aparelhos/videogames e regras de jogos ensinam como fazer algo passo a passo."}, {"id": 5, "categoria": "Texto Instrucional", "texto_apoio": "Trecho de um manual de videogame:\n'Para pular sobre o obstáculo, pressione o botão verde. Se quiser correr mais rápido, mantenha a alavanca inclinada para frente.'", "pergunta": "O que acontece se o jogador não seguir as instruções do manual?", "opcoes": ["O personagem não fará os movimentos corretos e o jogador pode perder a partida.", "O videogame vai quebrar imediatamente.", "O personagem aprenderá sozinho a voar pela tela.", "O jogo fica mais fácil sem precisar apertar botões."], "correta": 0, "explicacao": "Perfeito! As instruções mostram o que fazer para que tudo funcione certo. Sem segui-las, o jogador não consegue comandar o personagem."}, {"id": 6, "categoria": "Texto Instrucional", "texto_apoio": null, "pergunta": "Em uma receita de bolo (que é um texto instrucional), quais são as duas partes principais e indispensáveis?", "opcoes": ["Personagens e tempo da história.", "Ingredientes e modo de preparo.", "Rimas e estrofes musicais.", "Desenhos e data de fabricação do forno."], "correta": 1, "explicacao": "Certinho! Toda receita precisa da lista com os ingredientes necessários e do modo de preparo (como misturar e assar)."}, {"id": 7, "categoria": "Grau do Substantivo", "texto_apoio": "Quanto ao grau, o substantivo pode estar no grau normal, diminutivo ou aumentativo:\n• Normal: copo | Diminutivo: copinho | Aumentativo: copão", "pergunta": "Qual alternativa apresenta o diminutivo e o aumentativo da palavra CASA?", "opcoes": ["Casinha e Casarão", "Casebre e Casão", "Casita e Casinha", "Casarão e Casinha"], "correta": 0, "explicacao": "Correto! O diminutivo comum é casinha e o aumentativo é casarão (ou casona)."}, {"id": 8, "categoria": "Grau do Substantivo", "texto_apoio": null, "pergunta": "Nem toda palavra que termina com '-ão' está no grau aumentativo! Em qual das frases a palavra em destaque NÃO é um aumentativo?", "opcoes": ["Aquele jogador tem um pezão bem grande.", "O motorista ligou o caminhão e pegou a estrada.", "A cozinheira usou um panelão para fazer a sopa.", "O cachorro deu uma latida com seu vozeirão."], "correta": 1, "explicacao": "Muito bem! 'Caminhão' é o nome normal do veículo (palavra em seu grau normal). Já pezão, panelão e vozeirão indicam tamanho aumentado."}, {"id": 9, "categoria": "Grau do Substantivo", "texto_apoio": "Diálogo da tirinha:\nDorinha: — Uau! Que cheirinho bom! Que truque você usa pra ficar com um cheirinho assim?\nCascão: — Ficar contra o vento!", "pergunta": "A palavra 'cheirinho' está no diminutivo. Nesse diálogo, ela foi usada para indicar:", "opcoes": ["Que o cheiro era tão fraco que ninguém conseguia sentir.", "Um sentimento de carinho e agrado, elogiando o aroma suave.", "Que a Dorinha estava com muita raiva do Cascão.", "Que o Cascão finalmente aprendeu a tomar banho."], "correta": 1, "explicacao": "Excelente! O diminutivo muitas vezes é usado para expressar carinho, afeto ou delicadeza, e não apenas tamanho pequeno."}, {"id": 10, "categoria": "Grau do Substantivo", "texto_apoio": "Leia as duas frases:\n1. 'Meu pai é um paizão!'\n2. 'Esse timinho jogou muito mal hoje.'", "pergunta": "Nas frases 1 e 2, as palavras destacadas expressam, respectivamente:", "opcoes": ["Tamanho gigante e tamanho minúsculo.", "Carinho/admiração e desprezo/pouco caso.", "Dúvida e certeza absoluta.", "Raiva e felicidade."], "correta": 1, "explicacao": "Parabéns! 'Paizão' expressa carinho e admiração por ser um grande pai. 'Timinho' expressa desprezo ou decepção com o time."}, {"id": 11, "categoria": "Grau do Substantivo", "texto_apoio": null, "pergunta": "Alguns substantivos têm aumentativos e diminutivos com formas especiais. Assinale a correspondência correta:", "opcoes": ["Aumentativo de fogo: fogaréu | Diminutivo de rio: riacho", "Aumentativo de boca: boquinha | Diminutivo de muro: muralha", "Aumentativo de casa: casebre | Diminutivo de cão: canzarrão", "Aumentativo de homem: omenzinho | Diminutivo de fogo: fogão"], "correta": 0, "explicacao": "Perfeito! 'Fogaréu' é um aumentativo especial de fogo, e 'riacho' é o diminutivo especial de rio."}, {"id": 12, "categoria": "Ortografia: -sinho / -zinho", "texto_apoio": "REGRA:\n• Se a palavra primitiva tem 'S' na última sílaba, o diminutivo continua com 'S' (-sinho/-sinha).\n• Se NÃO tem 'S', usamos '-zinho' ou '-zinha' com 'Z'.", "pergunta": "A palavra ROSA tem 'S' na última sílaba (ro-sa). Qual é a escrita correta do seu diminutivo?", "opcoes": ["Rozinha (com Z)", "Rosinha (com S)", "Rosezinha (com Z)", "Rossinha (com SS)"], "correta": 1, "explicacao": "Muito bem! Como 'rosa' já tem a letra S na última sílaba, seu diminutivo mantém o S: Rosinha."}, {"id": 13, "categoria": "Ortografia: -sinho / -zinho", "texto_apoio": null, "pergunta": "Assinale a opção em que TODAS as palavras formam o diminutivo com -ZINHO ou -ZINHA (com Z):", "opcoes": ["Mesa, asa, parafuso.", "Pé, café, flor.", "Lápis, casa, camisa.", "Raposa, vaso, tesoura."], "correta": 1, "explicacao": "Certíssimo! Pé, café e flor não têm a letra S no final. Por isso recebem sufixo com Z: pezinho, cafezinho, florzinha."}, {"id": 14, "categoria": "Ortografia: -sinho / -zinho", "texto_apoio": "Observe as palavras primitivas:\n1. pé -> pe___inho\n2. asa -> a___inha\n3. café -> cafe___inho\n4. tesoura -> te___ourinha", "pergunta": "Qual sequência de letras completa corretamente as lacunas?", "opcoes": ["Z – S – Z – S", "S – Z – S – Z", "Z – Z – S – S", "S – S – Z – Z"], "correta": 0, "explicacao": "Show! Pé (sem S) = peZinho; Asa (com S) = aSinha; Café (sem S) = cafeZinho; Tesoura (com S) = teSourinha."}, {"id": 15, "categoria": "Ortografia: Diminutivo no Plural", "texto_apoio": "REGRA DO PLURAL:\n1. Coloque a palavra no plural: animal -> animais / pastel -> pastéis.\n2. Retire o 's' final: animai- / pastei-.\n3. Acrescente '-zinhos': animai + zinhos = animaizinhos / pastei + zinhos = pasteizinhos.", "pergunta": "Seguindo essa regra, como fica o diminutivo no plural de ANIMAL e PASTEL?", "opcoes": ["Animalzinhos e Pastelzinhos", "Animaizinhos e Pasteizinhos", "Animaisinhos e Pasteisinhos", "Animaiszinhos e Pasteiszinhos"], "correta": 1, "explicacao": "Sensacional! Tira-se a letra 's' do plural e junta-se '-zinhos': animais -> animaizinhos; pastéis -> pasteizinhos."}, {"id": 16, "categoria": "Ortografia: -sinho / -zinho", "texto_apoio": null, "pergunta": "Assinale a frase em que as duas palavras no diminutivo estão escritas de forma CORRETA:", "opcoes": ["O menino comprou um chapeuzinho novo e uma blusinha amarela.", "O menino comprou um chapeusinho novo e uma bluzinha amarela.", "O menino comprou um chapeuzinho novo e uma bluzinha amarela.", "O menino comprou um chapeusinho novo e uma blusinha amarela."], "correta": 0, "explicacao": "Perfeito! 'Chapéu' não tem S -> chapeuZinho (com Z). 'Blusa' tem S -> bluSinha (com S)."}, {"id": 17, "categoria": "Adjetivos", "texto_apoio": null, "pergunta": "Na língua portuguesa, o que são ADJETIVOS?", "opcoes": ["Palavras que dão nome às coisas, lugares e pessoas.", "Palavras que indicam qualidades, características ou estados dos substantivos.", "Palavras que indicam ações que estamos praticando.", "Sinais de pontuação usados no fim de frases."], "correta": 1, "explicacao": "Isso aí! Adjetivos são as palavras que descrevem como os substantivos são (bonito, veloz, alegre, amarelo, etc.)."}, {"id": 18, "categoria": "Adjetivos", "texto_apoio": "Trecho sobre Santos Dumont:\n'O corajoso inventor construiu um balão dirigível muito leve e veloz.'", "pergunta": "As palavras destacadas (leve e veloz) estão caracterizando o balão. Elas são classificadas como:", "opcoes": ["Substantivos.", "Verbos.", "Adjetivos.", "Pronomes."], "correta": 2, "explicacao": "Correto! 'Leve' e 'veloz' são adjetivos que dizem as qualidades do balão dirigível."}, {"id": 19, "categoria": "Gênero Textual: Biografia", "texto_apoio": null, "pergunta": "Qual é a característica principal de uma BIOGRAFIA ou de um CONTO DE MEMÓRIAS?", "opcoes": ["Narrar acontecimentos reais da vida de uma pessoa, geralmente organizados em uma linha do tempo.", "Contar uma história de ficção com dragões mágicos e bruxas.", "Ensinar como cozinhar um almoço delicioso.", "Anunciar produtos que estão em promoção na loja."], "correta": 0, "explicacao": "Muito bem! Uma biografia relata os momentos marcantes e verdadeiros da vida de alguém, do nascimento ao longo dos anos."}, {"id": 20, "categoria": "Adjetivos", "texto_apoio": "Modelo:\n• Menino 'com coragem' = Menino 'corajoso'.", "pergunta": "Como transformamos as expressões 'Criança com manha' e 'Pessoa com bondade' em adjetivos?", "opcoes": ["Criança manhosa e Pessoa bondosa.", "Criança manhenta e Pessoa bondadista.", "Criança manheira e Pessoa bondosa.", "Criança manhosa e Pessoa bonitinha."], "correta": 0, "explicacao": "Perfeito! Quem tem manha é manhoso(a), e quem tem bondade é bondoso(a)."}, {"id": 21, "categoria": "Adjetivos Pátrios", "texto_apoio": "O adjetivo pátrio indica a origem, o país, estado ou cidade de onde alguém ou algo veio.\nExemplo: Quem nasce no Rio de Janeiro pode ser carioca ou fluminense.", "pergunta": "Quem nasce no estado de MINAS GERAIS é mineiro. E quem nasce no estado da BAHIA é:", "opcoes": ["Baiano", "Baianense", "Brasiliense", "Balanense"], "correta": 0, "explicacao": "Certíssimo! Quem nasce na Bahia é baiano (ou baiana)."}, {"id": 22, "categoria": "Adjetivos Pátrios", "texto_apoio": null, "pergunta": "Relacione os países com seus respectivos adjetivos pátrios:\n1. Portugal | 2. Japão | 3. França | 4. Argentina", "opcoes": ["1-Argentino, 2-Francês, 3-Japonês, 4-Português.", "1-Português, 2-Japonês, 3-Francês, 4-Argentino.", "1-Português, 2-Francês, 3-Argentino, 4-Japonês.", "1-Espanhol, 2-Japonês, 3-Francês, 4-Argentino."], "correta": 1, "explicacao": "Show! Portugal = português; Japão = japonês; França = francês; Argentina = argentino."}, {"id": 23, "categoria": "Adjetivos Pátrios", "texto_apoio": "Frase: 'O escritor Monteiro Lobato foi um grande autor paulista que criou o Sítio do Picapau Amarelo.'", "pergunta": "A palavra PAULISTA é um adjetivo pátrio que se refere a quem nasce:", "opcoes": ["Na cidade de Curitiba.", "No estado de São Paulo.", "No país de Portugal.", "No estado do Rio Grande do Sul."], "correta": 1, "explicacao": "Isso mesmo! Paulista é quem nasce no estado de São Paulo (quem nasce na capital é paulistano)."}, {"id": 24, "categoria": "Adjetivos Pátrios", "texto_apoio": "Frase: 'O tradicional pão de queijo mineiro é famoso em todo o Brasil.'", "pergunta": "Na frase acima, a palavra 'mineiro' é um adjetivo pátrio que está caracterizando:", "opcoes": ["Brasil.", "Tradicional.", "Pão de queijo.", "Famoso."], "correta": 2, "explicacao": "Perfeito! 'Mineiro' concorda com e indica a origem do substantivo 'pão de queijo'."}, {"id": 25, "categoria": "Ortografia: -ês e -esa", "texto_apoio": "REGRA:\nTítulos de nobreza e palavras que indicam nacionalidade ou origem terminadas em som de 'êz' e 'éza' são escritas com S (-ês e -esa).\nExemplos: duque -> duquesa / marquês -> marquesa.", "pergunta": "Como se escreve o feminino das palavras MARQUÊS e CAMPONÊS?", "opcoes": ["Marqueza e camponeza (com Z)", "Marquesa e camponesa (com S)", "Marqueça e camponeça (com Ç)", "Marquêsa e camponêsa (com acento)"], "correta": 1, "explicacao": "Muito bem! Escrevem-se com S: marquesa e camponesa (e não levam acento no feminino)."}, {"id": 26, "categoria": "Ortografia: -ês e -esa", "texto_apoio": null, "pergunta": "Qual das palavras abaixo representa um título de nobreza e está com a grafia CORRETA?", "opcoes": ["Duqueza (com Z)", "Baroneza (com Z)", "Princesa (com S)", "Camponeza (com Z)"], "correta": 2, "explicacao": "Parabéns! Princesa é escrito com S (assim como duquesa, baronesa e marquesa)."}, {"id": 27, "categoria": "Ortografia: -ês e -esa", "texto_apoio": null, "pergunta": "Complete a frase: 'A jovem ________ (nascida na França) e a turista ________ (nascida na Inglaterra) adoraram o Brasil.'", "opcoes": ["francesa e inglesa", "franceza e ingleza", "francêsa e inglêsa", "francesa e ingleza"], "correta": 0, "explicacao": "Excelente! Nacionalidades no feminino terminam em -esa com a letra S: francesa e inglesa."}, {"id": 28, "categoria": "Gênero Textual: Classificados", "texto_apoio": "EXEMPLO DE CLASSIFICADO:\n'VENDE-SE BICICLETA ARO 20: Cor azul, 18 marchas, pouco usada, ótimo estado. Preço: R$ 250,00. Tratar com João: (11) 99999-8888.'", "pergunta": "Qual é a finalidade de um anúncio classificado?", "opcoes": ["Ensinar uma lição de moral aos leitores.", "Divulgar de forma curta e objetiva a venda, troca, aluguel de produtos ou oferta de serviços.", "Contar uma história de suspense sobre uma bicicleta perdida.", "Informar o resultado do jogo de futebol de ontem."], "correta": 1, "explicacao": "Exato! Os classificados são textos rápidos que conectam quem quer vender/alugar a quem quer comprar."}, {"id": 29, "categoria": "Gênero Textual: Classificados", "texto_apoio": null, "pergunta": "Em um anúncio classificado de venda, qual informação NÃO pode faltar de jeito nenhum para o negócio dar certo?", "opcoes": ["A descrição do produto, o valor (preço) e o contato do vendedor (telefone/e-mail).", "A receita da comida favorita do vendedor.", "Uma poesia rimada de dez estrofes.", "A previsão do tempo para a semana seguinte."], "correta": 0, "explicacao": "Com certeza! Sem saber o preço, o que está sendo vendido e o telefone para contato, o comprador não consegue negociar!"}, {"id": 30, "categoria": "Uso do Dicionário", "texto_apoio": null, "pergunta": "No dicionário, as palavras que pesquisamos são chamadas de VERBETES. De que forma elas são organizadas?", "opcoes": ["Em ordem alfabética (de A até Z) e escritas no singular/forma básica.", "Pelo tamanho da palavra, das menores para as maiores.", "Na ordem em que o autor foi lembrando de cada uma.", "Sempre no plural e misturadas sem regra."], "correta": 0, "explicacao": "Perfeito! No dicionário, as palavras seguem a ordem do alfabeto (A, B, C...) e ficam no singular (ex: procuramos 'livro', e não 'livrinhos')."}, {"id": 31, "categoria": "Ortografia: Mas / Mais / Más", "texto_apoio": "DICA RÁPIDA:\n• MAIS = quantidade, soma (contrário de menos).\n• MAS = ideia contrária, porém (oposição).\n• MÁS = plural de má (contrário de boas).", "pergunta": "Complete a frase: 'O garoto queria ir ao parque, _______ começou a chover. Então, comeu _______ um pedaço de bolo.'", "opcoes": ["mais e mas", "mas e mais", "más e mais", "mas e más"], "correta": 1, "explicacao": "Muito bem! '...queria ir, MAS (porém) começou a chover... comeu MAIS (quantidade) um pedaço...'"}, {"id": 32, "categoria": "Ortografia: Mas / Mais / Más", "texto_apoio": null, "pergunta": "Em qual das frases abaixo a palavra em destaque foi usada de forma INCORRETA?", "opcoes": ["Ele estudou muito, mas não conseguiu tirar nota dez.", "Eu quero comprar mais figurinhas para o meu álbum.", "Aquelas bruxas dos contos de fadas eram pessoas más.", "Eu tentei correr rápido, mais acabei tropeçando na pedra."], "correta": 3, "explicacao": "Excelente! Na última frase deveria ser 'MAS' (ideia de oposição/porém), e não 'mais'."}, {"id": 33, "categoria": "Ortografia: Final S ou Z", "texto_apoio": "Observe as palavras:\n1. feli___\n2. paí___\n3. capa___\n4. botõe___", "pergunta": "Qual sequência de letras (S ou Z) completa corretamente essas palavras?", "opcoes": ["Z – S – Z – S", "S – Z – S – Z", "Z – Z – S – S", "S – S – Z – Z"], "correta": 0, "explicacao": "Certinho! FeliZ (com Z), PaíS (com S), CapaZ (com Z) e BotõeS (com S)."}, {"id": 34, "categoria": "História em Quadrinhos", "texto_apoio": null, "pergunta": "Nas Histórias em Quadrinhos (HQ), o que significa quando a fala de um personagem está dentro de um balão com traços pontiagudos (em formato de raio ou zigue-zague)?", "opcoes": ["Que o personagem está cochichando baixinho em segredo.", "Que o personagem está pensando, sem que ninguém ouça.", "Que o personagem está gritando, assustado ou com muita raiva.", "Que o personagem está dormindo profundamente."], "correta": 2, "explicacao": "Correto! O balão pontiagudo ou com formato de explosão representa som alto, grito, pavor ou susto."}, {"id": 35, "categoria": "Pronomes Pessoais", "texto_apoio": "Frase:\n'O Cascão e o Cebolinha planejaram um plano infalível. O Cascão e o Cebolinha correram da Mônica.'", "pergunta": "Para evitar a repetição de palavras na segunda frase, podemos trocar 'O Cascão e o Cebolinha' pelo pronome:", "opcoes": ["Eles", "Nós", "Ele", "Elas"], "correta": 0, "explicacao": "Muito bem! 'Cascão e Cebolinha' são dois garotos (eles): 'Eles correram da Mônica'."}, {"id": 36, "categoria": "Pessoas do Discurso", "texto_apoio": "PESSOAS DO DISCURSO:\n• 1ª pessoa: quem fala (eu / nós).\n• 2ª pessoa: com quem se fala (tu / vós / você).\n• 3ª pessoa: de quem se fala (ele / ela / eles / elas).", "pergunta": "Na frase: 'NÓS vamos ao cinema amanhã', o pronome NÓS pertence a qual pessoa do discurso?", "opcoes": ["1ª pessoa do plural (indica quem fala junto com outras pessoas).", "2ª pessoa do singular (com quem se fala).", "3ª pessoa do singular (de quem se fala).", "Nenhuma das opções anteriores."], "correta": 0, "explicacao": "Show! 'Eu' e 'Nós' indicam quem está falando, ou seja, a 1ª pessoa do discurso (singular e plural)."}, {"id": 37, "categoria": "Pronomes Pessoais", "texto_apoio": "Marina dizendo:\n'Quando vejo uma aranha, EU subo logo na cadeira!'", "pergunta": "Quando Marina usa o pronome 'EU', ela está se referindo:", "opcoes": ["À Mônica.", "A si mesma.", "Ao leitor do gibi.", "À aranha."], "correta": 1, "explicacao": "Perfeito! 'Eu' é o pronome de 1ª pessoa usado quando falamos de nós mesmos."}, {"id": 38, "categoria": "Conto Popular", "texto_apoio": null, "pergunta": "O que é um CONTO POPULAR?", "opcoes": ["Uma notícia científica sobre novos planetas.", "Uma narrativa tradicional transmitida oralmente de geração em geração, cheia de ensinamentos e sabedoria popular.", "Um manual que ensina como ligar computadores.", "Um cartaz publicitário para vender ingressos de circo."], "correta": 1, "explicacao": "Parabéns! Contos populares são histórias passadas de pai para filho pela fala (tradição oral) há muitos anos."}, {"id": 39, "categoria": "Pronomes de Tratamento", "texto_apoio": "Trecho do conto:\n'Um camponês aproximou-se respeitosamente do trono e falou: — Meu Senhor, trago notícias do reino.'", "pergunta": "Nessa história, a palavra SENHOR foi usada pelo camponês para:", "opcoes": ["Zombar e rir do rei.", "Dirigir-se ao rei com muito respeito e reverência.", "Mostrar que eles eram amigos de infância da escola.", "Dizer que o rei estava ficando com rugas de velhice."], "correta": 1, "explicacao": "Exato! 'Senhor' é um pronome de tratamento que demonstra educação, formalidade e respeito."}, {"id": 40, "categoria": "Pronomes de Tratamento", "texto_apoio": "Relacione os pronomes de tratamento:\n1. Você\n2. Senhor / Senhora\n3. Vossa Majestade\n4. Vossa Santidade", "pergunta": "A qual pessoa devemos usar 'VOSSA MAJESTADE' e 'VOSSA SANTIDADE', respectivamente?", "opcoes": ["Para amigos da escola e professores.", "Para reis/rainhas e para o Papa da Igreja Católica.", "Para o motorista e o médico.", "Para juízes e prefeitos da cidade."], "correta": 1, "explicacao": "Sensacional! Usamos 'Vossa Majestade' para Reis e Rainhas, e 'Vossa Santidade' exclusivamente para o Papa!"}];
+
+    let currentIndex = 0;
+    let score = 0;
+    let streak = 0;
+    let answered = false;
+    let soundEnabled = true;
+
+    // Web Audio API sintetizada
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (type === 'correct') {
+          // Acorde alegre triunfante
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          notes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.08);
+            gain.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.35);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + i * 0.08);
+            osc.stop(ctx.currentTime + i * 0.08 + 0.35);
+          });
+        } else if (type === 'wrong') {
+          // Som de aviso suave
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(160, ctx.currentTime + 0.25);
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.3);
+        }
+      } catch (e) {
+        console.warn('Audio not allowed yet', e);
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('soundToggle').textContent = soundEnabled ? '🔊' : '🔇';
+    }
+
+    function startQuiz() {
+      currentIndex = 0;
+      score = 0;
+      streak = 0;
+      document.getElementById('scoreDisplay').textContent = '0';
+      document.getElementById('streakDisplay').textContent = '0';
+      document.getElementById('screenStart').style.display = 'none';
+      document.getElementById('screenResult').style.display = 'none';
+      document.getElementById('screenQuiz').style.display = 'block';
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      answered = false;
+      const q = questions[currentIndex];
+
+      // Atualiza categoria e progresso
+      document.getElementById('badgeCategory').textContent = q.categoria;
+      document.getElementById('questionCounter').textContent = `Questão ${currentIndex + 1} de ${questions.length}`;
+      
+      const pct = Math.round((currentIndex / questions.length) * 100);
+      document.getElementById('progressPercent').textContent = `${pct}%`;
+      document.getElementById('progressFill').style.width = `${pct}%`;
+
+      // Texto de apoio
+      const supportBox = document.getElementById('supportBox');
+      if (q.texto_apoio) {
+        supportBox.textContent = q.texto_apoio;
+        supportBox.style.display = 'block';
+      } else {
+        supportBox.style.display = 'none';
+      }
+
+      // Enunciado
+      document.getElementById('questionTitle').textContent = q.pergunta;
+
+      // Opções
+      const optionsGrid = document.getElementById('optionsGrid');
+      optionsGrid.innerHTML = '';
+      const letters = ['A', 'B', 'C', 'D'];
+
+      q.opcoes.forEach((opcao, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.id = `opt_${idx}`;
+        btn.innerHTML = `
+          <span class="option-letter">${letters[idx]}</span>
+          <span>${opcao}</span>
+        `;
+        btn.onclick = () => selectOption(idx);
+        optionsGrid.appendChild(btn);
+      });
+
+      // Esconde explicação e botão próxima
+      document.getElementById('explanationCard').style.display = 'none';
+      document.getElementById('actionBar').style.display = 'none';
+    }
+
+    function selectOption(selectedIdx) {
+      if (answered) return;
+      answered = true;
+
+      const q = questions[currentIndex];
+      const isCorrect = (selectedIdx === q.correta);
+      const chosenBtn = document.getElementById(`opt_${selectedIdx}`);
+      const correctBtn = document.getElementById(`opt_${q.correta}`);
+
+      // Desabilita todos
+      for (let i = 0; i < q.opcoes.length; i++) {
+        document.getElementById(`opt_${i}`).disabled = true;
+      }
+
+      const expCard = document.getElementById('explanationCard');
+      const expTitle = document.getElementById('explanationTitle');
+      const expBody = document.getElementById('explanationBody');
+
+      if (isCorrect) {
+        chosenBtn.classList.add('correct');
+        score++;
+        streak++;
+        playSound('correct');
+        triggerConfetti(false);
+
+        expCard.className = 'explanation-card success-mode';
+        expTitle.innerHTML = '🎉 Parabéns! Você acertou!';
+      } else {
+        chosenBtn.classList.add('wrong');
+        correctBtn.classList.add('correct');
+        streak = 0;
+        playSound('wrong');
+
+        expCard.className = 'explanation-card error-mode';
+        expTitle.innerHTML = '💡 Não foi dessa vez, mas preste atenção:';
+      }
+
+      expBody.textContent = q.explicacao;
+      expCard.style.display = 'block';
+
+      // Atualiza placar
+      document.getElementById('scoreDisplay').textContent = score;
+      document.getElementById('streakDisplay').textContent = streak;
+
+      // Mostra botão de próxima pergunta
+      const nextBtn = document.getElementById('nextBtn');
+      if (currentIndex === questions.length - 1) {
+        nextBtn.innerHTML = 'VER MEU RESULTADO FINAL 🏆';
+      } else {
+        nextBtn.innerHTML = 'Próxima Pergunta ➔';
+      }
+      document.getElementById('actionBar').style.display = 'flex';
+    }
+
+    function nextQuestion() {
+      if (currentIndex < questions.length - 1) {
+        currentIndex++;
+        loadQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      document.getElementById('screenQuiz').style.display = 'none';
+      document.getElementById('screenResult').style.display = 'block';
+
+      document.getElementById('finalScoreText').textContent = `${score} / ${questions.length}`;
+      const pct = Math.round((score / questions.length) * 100);
+      document.getElementById('finalPercentText').textContent = `${pct}% de aproveitamento`;
+
+      const resultTitle = document.getElementById('resultTitle');
+      const resultIcon = document.getElementById('resultIcon');
+      const finalMessage = document.getElementById('finalMessage');
+
+      if (score >= 36) {
+        resultIcon.textContent = '🏆🥇';
+        resultTitle.textContent = 'Sensacional, Caetano!';
+        finalMessage.textContent = 'Uau! Você teve um desempenho de campeão! Dominou as regras de aumentativo, diminutivo, adjetivos, acentuação e pronomes. Nota 10 garantida!';
+        triggerConfetti(true);
+      } else if (score >= 28) {
+        resultIcon.textContent = '🥈✨';
+        resultTitle.textContent = 'Muito bem, Caetano!';
+        finalMessage.textContent = 'Ótimo resultado! Você acertou a grande maioria das questões. Só dar uma revisada rápida nas que errou e você vai gabaritar a prova!';
+        triggerConfetti(true);
+      } else {
+        resultIcon.textContent = '📚💪';
+        resultTitle.textContent = 'Bom esforço, Caetano!';
+        finalMessage.textContent = 'Você completou as 40 questões! Agora é só revisar as explicações e jogar de novo para fixar tudo na memória. Você é super capaz!';
+      }
+    }
+
+    // Efeito Confetti Leve Nativo
+    const canvas = document.getElementById('confettiCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function triggerConfetti(massive = false) {
+      const count = massive ? 120 : 40;
+      const colors = ['#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6'];
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: massive ? Math.random() * canvas.width : canvas.width / 2,
+          y: massive ? -10 : canvas.height / 2,
+          w: Math.random() * 8 + 4,
+          h: Math.random() * 6 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * (massive ? 8 : 12),
+          vy: massive ? Math.random() * 4 + 2 : (Math.random() - 0.8) * 10,
+          rotation: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 10,
+          life: 1
+        });
+      }
+    }
+
+    function animateConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.25; // gravidade
+        p.rotation += p.vRot;
+        p.life -= 0.015;
+
+        if (p.life <= 0 || p.y > canvas.height + 20) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      requestAnimationFrame(animateConfetti);
+    }
+    animateConfetti();
+  </script>
+</body>
+</html>
